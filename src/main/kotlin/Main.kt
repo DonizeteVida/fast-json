@@ -1,3 +1,9 @@
+
+@JsonType
+data class MyType(
+    val name: String
+)
+
 fun main(args: Array<String>) {
     println("Hello World!")
 

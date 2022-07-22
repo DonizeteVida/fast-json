@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.7.10"
+    id("com.google.devtools.ksp")
     application
 }
 
@@ -13,6 +14,9 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":fast-json-annotation"))
+    ksp(project(":fast-json-compiler"))
+
     testImplementation(kotlin("test"))
 }
 
@@ -26,4 +30,8 @@ tasks.withType<KotlinCompile> {
 
 application {
     mainClass.set("MainKt")
+}
+
+sourceSets.main {
+    java.srcDirs("build/generated/ksp")
 }
