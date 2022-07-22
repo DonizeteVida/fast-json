@@ -1,6 +1,5 @@
 
-@JsonType
-data class MyType(
+data class MyType @JsonType constructor(
     val name: String
 )
 
