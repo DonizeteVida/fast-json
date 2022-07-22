@@ -1,4 +1,4 @@
 @Target(AnnotationTarget.FIELD)
 annotation class JsonField(
-    val name: String = ""
+    val name: String
 )

@@ -9,7 +9,13 @@ data class MyType @JsonType constructor(
 )
 
 data class MyNestedType @JsonType constructor(
-    val name: String
+    val name: String,
+    @JsonField(name = "more_nested")
+    val moreNested: MoreNested
+)
+
+data class MoreNested @JsonType constructor(
+    val age: Int
 )
 
 fun main(args: Array<String>) {
@@ -24,7 +30,10 @@ fun main(args: Array<String>) {
             "data4": 4.4444, 
             "data5": 5.5555, 
             "nested": { 
-                "name": "Doni" 
+                "name": "Doni",
+                "more_nested": {
+                    "age": 23
+                }
             }
         }
         """.trimIndent()
