@@ -1,8 +1,7 @@
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.*
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-import com.google.devtools.ksp.symbol.KSType
-import com.google.devtools.ksp.symbol.KSVisitorVoid
+import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -107,15 +106,17 @@ class FastJsonVisitor(
         function.parameters.map {
             val declaration = it.type.resolve().declaration
             val isPrimitive = declaration.containingFile == null
+            val annotation = it.asAnnotations<JsonField>().firstOrNull()
+
             if (isPrimitive) {
                 Param.Primitive(
-                    name = it.name?.getShortName() ?: throw IllegalStateException(""),
+                    name = annotation?.name ?: it.name!!.getShortName(),
                     packageName = declaration.packageName.getShortName(),
                     type = declaration.simpleName.getShortName()
                 )
             } else {
                 Param.Complex(
-                    name = it.name?.getShortName() ?: throw IllegalStateException(""),
+                    name = annotation?.name ?: it.name!!.getShortName(),
                     packageName = declaration.packageName.getShortName(),
                     type = declaration.simpleName.getShortName()
                 )
@@ -132,3 +133,6 @@ inline fun <reified T : Any> Sequence<Any>.forEachInstance(consumer: (T) -> Unit
     forEach {
         if (it is T) consumer(it)
     }
+
+@OptIn(KspExperimental::class)
+private inline fun <reified T : Annotation> KSValueParameter.asAnnotations() = getAnnotationsByType(T::class)

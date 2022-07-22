@@ -1,4 +1,5 @@
 data class MyType @JsonType constructor(
+    @JsonField(name = "data_1")
     val data1: String,
     val data2: Int,
     val data3: Long,
@@ -6,12 +7,16 @@ data class MyType @JsonType constructor(
     val data5: Double
 )
 
+data class MyNestedType @JsonType constructor(
+    val name: String
+)
+
 fun main(args: Array<String>) {
     println("Hello World!")
 
     val myType: MyType = MyTypeParser(
         """
-        {"data1":"John", "data2": 2, "data3": 12312312, "data4": 4.4444, "data5": 5.5555}
+        {"data_1":"John", "data2": 2, "data3": 12312312, "data4": 4.4444, "data5": 5.5555}
         """.trimIndent()
     )
 
