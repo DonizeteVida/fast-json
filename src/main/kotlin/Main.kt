@@ -17,7 +17,16 @@ fun main(args: Array<String>) {
 
     val myType: MyType = MyTypeParser(
         """
-        {"data_1":"John", "data2": 2, "data3": 12312312, "data4": 4.4444, "data5": 5.5555, "nested": { "name": "Doni" }}
+        {
+            "data_1":"John", 
+            "data2": 2, 
+            "data3": 12312312, 
+            "data4": 4.4444, 
+            "data5": 5.5555, 
+            "nested": { 
+                "name": "Doni" 
+            }
+        }
         """.trimIndent()
     )
 
