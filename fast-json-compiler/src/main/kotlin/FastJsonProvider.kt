@@ -88,7 +88,11 @@ class FastJsonVisitor(
                                             append("jsonObject.get${it.type}(\"${it.name}\"), ")
                                         }
                                         is Param.Complex -> {
-                                            addImport(it.packageName, "${it.name}Parser")
+                                            val complex = "${it.type}Parser"
+                                            addImport(it.packageName, complex)
+                                            append("$complex(")
+                                            append("jsonObject.getJSONObject(\"${it.name}\")")
+                                            append("), ")
                                         }
                                     }
                                 }
