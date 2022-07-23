@@ -21,11 +21,8 @@ interface ListParser<T> {
 inline fun <T> JSONArray.map(
     wrapper: (JSONObject) -> T,
     mapper: JSONArray.(Int) -> JSONObject
-): List<T> {
-    val len = length()
-    return ArrayList<T>(len).apply {
-        for (i in 0 until len) add(wrapper(this@map.mapper(i)))
-    }
+): List<T> = map {
+    wrapper(this.mapper(it))
 }
 
 inline fun <T> JSONArray.map(
