@@ -1,13 +1,15 @@
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.*
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
-import kotlin.reflect.KClass
 import org.json.JSONObject
+import kotlin.reflect.KClass
 
 class FastJsonProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor =
@@ -33,27 +35,10 @@ class FastJsonVisitor(
     private val kspLogger: KSPLogger
 ) : KSVisitorVoid() {
 
-    sealed interface Param {
-        val name: String
-        val packageName: String
-        val type: String
-
-        data class Primitive(
-            override val name: String,
-            override val packageName: String,
-            override val type: String
-        ) : Param
-
-        data class Complex(
-            override val name: String,
-            override val packageName: String,
-            override val type: String
-        ) : Param
-    }
-
     override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
         val packageName = function.packageName.getShortName()
-        val type = function.returnType?.resolve()?.declaration ?: throw IllegalStateException("Return type could not be recovered")
+        val type = function.returnType?.resolve()?.declaration
+            ?: throw IllegalStateException("Return type could not be recovered")
         val name = type.simpleName.getShortName()
         val parserName = "${name}Parser"
         val params = getFunctionParams(function)
@@ -65,6 +50,11 @@ class FastJsonVisitor(
                     parserName
                 ).apply {
                     addImport(packageName, name)
+                    params.forEach {
+                        it.additionalImports.forEach {(packageName, name) ->
+                            addImport(packageName, name)
+                        }
+                    }
                     addSuperinterface(
                         parser.parameterizedBy(
                             ClassName(packageName, name)
@@ -79,26 +69,11 @@ class FastJsonVisitor(
                             addParameter(
                                 "jsonObject", JSONObject::class
                             )
-                            val str = StringBuilder().apply {
+                            StringBuilder().apply {
                                 append("return $name(")
-                                params.forEach {
-                                    when (it) {
-                                        is Param.Primitive -> {
-                                            //jsonObject.getString("key")
-                                            append("jsonObject.get${it.type}(\"${it.name}\"), ")
-                                        }
-                                        is Param.Complex -> {
-                                            val complex = "${it.type}Parser"
-                                            addImport(it.packageName, complex)
-                                            append("$complex(")
-                                            append("jsonObject.getJSONObject(\"${it.name}\")")
-                                            append("), ")
-                                        }
-                                    }
-                                }
+                                append(params.joinToString(", "))
                                 append(")")
-                            }.toString()
-                            addStatement(str)
+                            }.toString().also(::addStatement)
                         }.build()
                     )
                 }.build()
@@ -112,20 +87,53 @@ class FastJsonVisitor(
             val isPrimitive = declaration.containingFile == null
             val annotation = it.asAnnotations<JsonField>().firstOrNull()
 
-            if (isPrimitive) {
-                Param.Primitive(
-                    name = annotation?.name ?: it.name!!.getShortName(),
-                    packageName = declaration.packageName.getShortName(),
-                    type = declaration.simpleName.getShortName()
+            val typeArguments = it.type.element?.typeArguments ?: emptyList()
+
+            val name = annotation?.name ?: it.name!!.getShortName()
+            val packageName = declaration.packageName.getShortName()
+            val type = declaration.simpleName.getShortName()
+
+            //Some generic shit
+            if (isPrimitive and typeArguments.isNotEmpty()) {
+                val argument = typeArguments.first()
+                val declaration = argument.type?.resolve()?.declaration ?: throw IllegalStateException("Declaration not found")
+                val type = declaration.simpleName.getShortName()
+
+                Param(
+                    name = name,
+                    packageName = packageName,
+                    type = type,
+                    invoke = """${type}Parser.asList(jsonObject.getJSONArray("$name"))"""
+                )
+            } else if (isPrimitive) {
+                Param(
+                    name = name,
+                    packageName = packageName,
+                    type = type,
+                    invoke = """jsonObject.get$type("$name")"""
                 )
             } else {
-                Param.Complex(
-                    name = annotation?.name ?: it.name!!.getShortName(),
-                    packageName = declaration.packageName.getShortName(),
-                    type = declaration.simpleName.getShortName()
+                Param(
+                    name = name,
+                    packageName = packageName,
+                    type = type,
+                    additionalImports = arrayListOf(
+                        packageName to "${type}Parser"
+                    ),
+                    invoke = """${type}Parser(jsonObject.getJSONObject("$name"))"""
                 )
             }
         }
+}
+
+data class Param(
+    val name: String,
+    val packageName: String,
+    val type: String,
+    val additionalImports: List<Pair<String, String>> = emptyList(),
+    val invoke: String
+) {
+    override fun toString() = invoke
 }
 
 val parser = Parser::class.asClassName()
