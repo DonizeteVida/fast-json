@@ -1,8 +1,7 @@
-import org.json.JSONObject
-
 data class MyType @JsonType constructor(
     @JsonField(name = "data_1")
     val data1: String,
+
     val data2: Int,
     val data3: Long,
     val data4: Float,
@@ -10,8 +9,19 @@ data class MyType @JsonType constructor(
     val nested: MyNestedType,
     val items: List<Int>,
     val names: List<String>,
+
     @JsonField("more_nesteds")
-    val moreNesteds: List<MoreNested>
+    val moreNesteds: List<MoreNested>,
+
+    @JsonField("as_set")
+    val asSet: Set<String>,
+
+    @JsonField("map_integer")
+    val mapInteger: Map<String, Int>,
+
+
+    @JsonField("map_object")
+    val mapObject: Map<String, MoreNested>
 )
 
 data class MyNestedType @JsonType constructor(
@@ -50,7 +60,17 @@ fun main(args: Array<String>) {
                 {
                     "age": 23
                 }
-            ]
+            ],
+            "as_set": ["A", "B", "C"],
+            "map_integer": {
+                "1": 1,
+                "2": 2,
+                "3": 4
+            },
+            "map_object": {
+                "1": { "age": 123 },
+                "2": { "age": 1234 }
+            }
         }
         """.trimIndent()
     )
