@@ -16,7 +16,6 @@ repositories {
 dependencies {
     implementation(project(":fast-json-annotation"))
     ksp(project(":fast-json-compiler"))
-    // https://mvnrepository.com/artifact/org.json/json
     implementation("org.json:json:20220320")
 
     testImplementation(kotlin("test"))

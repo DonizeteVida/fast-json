@@ -7,10 +7,10 @@ interface MapParser<T> {
 inline fun <T> JSONObject.map(
     wrapper: (JSONObject) -> T,
     mapper: JSONObject.(String) -> JSONObject
-): Map<String, T> = map {
+) = map {
     wrapper(mapper(it))
 }
 
 inline fun <T> JSONObject.map(
     mapper: JSONObject.(String) -> T
-): Map<String, T> = collect(mapper, ::HashMap)
+) = collect(mapper, ::HashMap)

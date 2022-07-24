@@ -136,7 +136,7 @@ class FastJsonVisitor(
                     additionalImports = arrayListOf(
                         packageName to "${type}Parser"
                     ),
-                    invoke = """${type}Parser(jsonObject.getJSONObject("$name"))"""
+                    invoke = """${type}Parser.fromJson(jsonObject.getJSONObject("$name"))"""
                 )
             }
         }

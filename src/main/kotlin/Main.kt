@@ -37,7 +37,7 @@ data class MoreNested @JsonType constructor(
 fun main(args: Array<String>) {
     println("Hello World!")
 
-    val myType: MyType = MyTypeParser(
+    val myType: MyType = MyTypeParser.fromJson(
         """
         {
             "data_1":"John", 

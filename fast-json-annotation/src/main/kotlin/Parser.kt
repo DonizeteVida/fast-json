@@ -2,28 +2,33 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 interface Parser<T> : ListParser<T>, SetParser<T>, MapParser<T> {
+
     operator fun invoke(json: String) = invoke(JSONObject(json))
 
     operator fun invoke(jsonObject: JSONObject): T
 
-    fun asList(json: String) = asList(JSONArray(json))
+    fun fromJson(json: String) = fromJson(JSONObject(json))
 
-    override fun asList(jsonArray: JSONArray) = jsonArray.list(
-        wrapper = ::invoke,
+    fun fromJson(jsonObject: JSONObject) = invoke(jsonObject)
+
+    fun asArrayList(json: String) = asList(JSONArray(json))
+
+    override fun asArrayList(jsonArray: JSONArray) = jsonArray.list(
+        wrapper = ::fromJson,
         mapper = JSONArray::getJSONObject
     )
 
-    fun asSet(json: String) = asSet(JSONArray(json))
+    fun asHashSet(json: String) = asSet(JSONArray(json))
 
-    override fun asSet(jsonArray: JSONArray): Set<T> = jsonArray.set(
-        wrapper = ::invoke,
+    override fun asHashSet(jsonArray: JSONArray) = jsonArray.set(
+        wrapper = ::fromJson,
         mapper = JSONArray::getJSONObject
     )
 
     fun asMap(json: String) = asMap(JSONObject(json))
 
     override fun asMap(jsonObject: JSONObject) = jsonObject.map(
-        wrapper = ::invoke,
+        wrapper = ::fromJson,
         mapper = JSONObject::getJSONObject
     )
 }
