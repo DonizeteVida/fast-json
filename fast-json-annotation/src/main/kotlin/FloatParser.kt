@@ -1,10 +1,9 @@
-import org.json.JSONArray
-import org.json.JSONObject
+object FloatParser : IListParser<Float>, ISetParser<Float>, IMapParser<Float> {
+    override fun asArrayList(array: JsonArrayWrapper) = array.list(JsonArrayWrapper::getFloat)
 
-object FloatParser : ListParser<Float>, SetParser<Float>, MapParser<Float> {
-    override fun asArrayList(jsonArray: JSONArray) = jsonArray.list(JSONArray::getFloat)
+    override fun asHashSet(array: JsonArrayWrapper) = array.set(JsonArrayWrapper::getFloat)
 
-    override fun asHashSet(jsonArray: JSONArray) = jsonArray.set(JSONArray::getFloat)
+    override fun asMap(obj: JsonObjectWrapper) = obj.map(JsonObjectWrapper::getFloat)
 
-    override fun asMap(jsonObject: JSONObject) = jsonObject.map(JSONObject::getFloat)
+    override fun toJson(list: List<Float>) = list.toJson(JsonArrayWrapper::putFloat)
 }

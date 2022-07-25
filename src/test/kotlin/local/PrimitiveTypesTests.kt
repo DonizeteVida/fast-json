@@ -1,9 +1,9 @@
 package local
 
-import dummy.ListPrimitiveObject
-import dummy.ListPrimitiveObjectParser
-import dummy.PrimitiveObject
-import dummy.PrimitiveObjectParser
+import dummy1.ListPrimitiveObject
+import dummy1.ListPrimitiveObjectParser
+import dummy1.PrimitiveObject
+import dummy1.PrimitiveObjectParser
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 

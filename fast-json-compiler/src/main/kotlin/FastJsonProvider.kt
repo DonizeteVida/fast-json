@@ -8,7 +8,6 @@ import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.ksp.writeTo
-import org.json.JSONObject
 import kotlin.reflect.KClass
 
 class FastJsonProvider : SymbolProcessorProvider {
@@ -56,7 +55,7 @@ class FastJsonVisitor(
                         }
                     }
                     addSuperinterface(
-                        parser.parameterizedBy(
+                        Parser::class.asClassName().parameterizedBy(
                             ClassName(packageName, name)
                         )
                     )
@@ -67,18 +66,35 @@ class FastJsonVisitor(
                                 KModifier.OPERATOR
                             )
                             addParameter(
-                                "jsonObject", JSONObject::class
+                                "obj", JsonObjectWrapper::class
                             )
                             StringBuilder().apply {
                                 append("return $name(")
-                                append(params.joinToString(", "))
+                                append(params.map(Param::fromJson).joinToString(", "))
                                 append(")")
+                            }.toString().also(::addStatement)
+                        }.build()
+                    )
+
+                    addFunction(
+                        FunSpec.builder("invoke").apply {
+                            addModifiers(
+                                KModifier.OVERRIDE,
+                                KModifier.OPERATOR
+                            )
+                            addParameter(
+                                "obj", ClassName(packageName, name)
+                            )
+                            StringBuilder().apply {
+                                append("return JsonObjectWrapper().apply {\n")
+                                append(params.map(Param::toJson).joinToString("\n"))
+                                append("\n}")
                             }.toString().also(::addStatement)
                         }.build()
                     )
                 }.build()
             )
-        }.build().writeTo(codeGenerator, Dependencies(false))
+        }.build().writeTo(codeGenerator, Dependencies(true))
     }
 
     private fun getFunctionParams(function: KSFunctionDeclaration): List<Param> =
@@ -92,7 +108,8 @@ class FastJsonVisitor(
 
             val typeArguments = it.type.element?.typeArguments ?: emptyList()
 
-            val name = annotation?.name ?: it.name!!.getShortName()
+            val paramName = it.name!!.getShortName()
+            val key = annotation?.name ?: paramName
             val packageName = declaration.packageName.getShortName()
             val type = declaration.simpleName.getShortName()
 
@@ -102,10 +119,12 @@ class FastJsonVisitor(
                         //probably a list or set
                         1 -> {
                             val argument = typeArguments.first()
-                            val declaration = argument.type?.resolve()?.declaration ?: throw IllegalStateException("Declaration not found")
+                            val declaration = argument.type?.resolve()?.declaration
+                                ?: throw IllegalStateException("Declaration not found")
                             val innerType = declaration.simpleName.getShortName()
                             Param(
-                                invoke = """${innerType}Parser.as${type}(jsonObject.getJSONArray("$name"))"""
+                                fromJson = """${innerType}Parser.as${type}(obj.getArray("$key"))""",
+                                toJson = """putArray("$key", ${innerType}Parser.toJson(obj.$paramName))"""
                             )
                         }
                         //A map, probably
@@ -113,22 +132,24 @@ class FastJsonVisitor(
                             val arg1 = typeArguments[0]
                             val arg2 = typeArguments[1]
 
-                            val dec1 = arg1.type?.resolve()?.declaration ?: throw IllegalStateException("Declaration not found")
-                            val dec2 = arg2.type?.resolve()?.declaration ?: throw IllegalStateException("Declaration not found")
+                            val dec1 = arg1.type?.resolve()?.declaration
+                                ?: throw IllegalStateException("Declaration not found")
+                            val dec2 = arg2.type?.resolve()?.declaration
+                                ?: throw IllegalStateException("Declaration not found")
 
                             val innerType = dec2.simpleName.getShortName()
 
-                            if (dec1.simpleName.getShortName() != "String") throw IllegalStateException("Map type $dec1 not supported")
-
                             Param(
-                                invoke = """${innerType}Parser.as${type}(jsonObject.getJSONObject("$name"))"""
+                                fromJson = """${innerType}Parser.as${type}(obj.getObject("$key"))""",
+                                toJson = """putObject("$key", ${type}Parser(obj.$paramName))"""
                             )
                         }
                         else -> throw IllegalStateException("Item is not supported")
                     }
                 } else {
                     Param(
-                        invoke = """jsonObject.get$type("$name")"""
+                        fromJson = """obj.get$type("$key")""",
+                        toJson = """put$type("$key", obj.$paramName)"""
                     )
                 }
             } else {
@@ -136,7 +157,8 @@ class FastJsonVisitor(
                     additionalImports = arrayListOf(
                         packageName to "${type}Parser"
                     ),
-                    invoke = """${type}Parser.fromJson(jsonObject.getJSONObject("$name"))"""
+                    fromJson = """${type}Parser(obj.getObject("$key"))""",
+                    toJson = """putObject("$key", ${type}Parser(obj.$paramName))"""
                 )
             }
         }
@@ -144,12 +166,9 @@ class FastJsonVisitor(
 
 data class Param(
     val additionalImports: List<Pair<String, String>> = emptyList(),
-    val invoke: String
-) {
-    override fun toString() = invoke
-}
-
-val parser = Parser::class.asClassName()
+    val fromJson: String,
+    val toJson: String
+)
 
 inline fun <reified T : Any> Resolver.forEach(clazz: KClass<*>, consumer: (T) -> Unit) =
     getSymbolsWithAnnotation(clazz.qualifiedName!!).forEachInstance(consumer)

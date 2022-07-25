@@ -1,10 +1,9 @@
-import org.json.JSONArray
-import org.json.JSONObject
+object LongParser : IListParser<Long>, ISetParser<Long>, IMapParser<Long> {
+    override fun asArrayList(array: JsonArrayWrapper) = array.list(JsonArrayWrapper::getLong)
 
-object LongParser : ListParser<Long>, SetParser<Long>, MapParser<Long> {
-    override fun asArrayList(jsonArray: JSONArray) = jsonArray.list(JSONArray::getLong)
+    override fun asHashSet(array: JsonArrayWrapper) = array.set(JsonArrayWrapper::getLong)
 
-    override fun asHashSet(jsonArray: JSONArray) = jsonArray.set(JSONArray::getLong)
+    override fun asMap(obj: JsonObjectWrapper) = obj.map(JsonObjectWrapper::getLong)
 
-    override fun asMap(jsonObject: JSONObject) = jsonObject.map(JSONObject::getLong)
+    override fun toJson(list: List<Long>) = list.toJson(JsonArrayWrapper::putLong)
 }

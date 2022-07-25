@@ -1,10 +1,9 @@
-import org.json.JSONArray
-import org.json.JSONObject
+object StringParser : IListParser<String>, ISetParser<String>, IMapParser<String> {
+    override fun asArrayList(array: JsonArrayWrapper) = array.list(JsonArrayWrapper::getString)
 
-object StringParser : ListParser<String>, SetParser<String>, MapParser<String> {
-    override fun asArrayList(jsonArray: JSONArray) = jsonArray.list(JSONArray::getString)
+    override fun asHashSet(array: JsonArrayWrapper) = array.set(JsonArrayWrapper::getString)
 
-    override fun asHashSet(jsonArray: JSONArray) = jsonArray.set(JSONArray::getString)
+    override fun asMap(obj: JsonObjectWrapper) = obj.map(JsonObjectWrapper::getString)
 
-    override fun asMap(jsonObject: JSONObject) = jsonObject.map(JSONObject::getString)
+    override fun toJson(list: List<String>) = list.toJson(JsonArrayWrapper::putString)
 }

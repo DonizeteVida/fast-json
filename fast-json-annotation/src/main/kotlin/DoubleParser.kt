@@ -1,10 +1,9 @@
-import org.json.JSONArray
-import org.json.JSONObject
+object DoubleParser : IListParser<Double>, ISetParser<Double>, IMapParser<Double> {
+    override fun asArrayList(array: JsonArrayWrapper) = array.list(JsonArrayWrapper::getDouble)
 
-object DoubleParser : ListParser<Double>, SetParser<Double>, MapParser<Double> {
-    override fun asArrayList(jsonArray: JSONArray) = jsonArray.list(JSONArray::getDouble)
+    override fun asHashSet(array: JsonArrayWrapper) = array.set(JsonArrayWrapper::getDouble)
 
-    override fun asHashSet(jsonArray: JSONArray) = jsonArray.set(JSONArray::getDouble)
+    override fun asMap(obj: JsonObjectWrapper) = obj.map(JsonObjectWrapper::getDouble)
 
-    override fun asMap(jsonObject: JSONObject) = jsonObject.map(JSONObject::getDouble)
+    override fun toJson(list: List<Double>) = list.toJson(JsonArrayWrapper::putDouble)
 }

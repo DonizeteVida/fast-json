@@ -1,55 +1,38 @@
-import org.json.JSONArray
-import org.json.JSONObject
+interface Parser<T> : IListParser<T>, ISetParser<T>, IMapParser<T> {
+    operator fun invoke(json: String) =
+        invoke(JsonObjectWrapper(json))
 
-interface Parser<T> : ListParser<T>, SetParser<T>, MapParser<T> {
+    operator fun invoke(obj: JsonObjectWrapper): T
 
-    operator fun invoke(json: String) = invoke(JSONObject(json))
+    operator fun invoke(obj: T): JsonObjectWrapper
 
-    operator fun invoke(jsonObject: JSONObject): T
+    fun fromJson(json: String) =
+        fromJson(JsonObjectWrapper(json))
 
-    fun fromJson(json: String) = fromJson(JSONObject(json))
+    fun fromJson(obj: JsonObjectWrapper) =
+        invoke(obj)
 
-    fun fromJson(jsonObject: JSONObject) = invoke(jsonObject)
+    fun toJson(obj: T) =
+        invoke(obj).toString()
 
-    fun asArrayList(json: String) = asList(JSONArray(json))
+    fun asArrayList(json: String) =
+        asList(JsonArrayWrapper(json))
 
-    override fun asArrayList(jsonArray: JSONArray) = jsonArray.list(
-        wrapper = ::fromJson,
-        mapper = JSONArray::getJSONObject
-    )
+    override fun toJson(list: List<T>) =
+        list.toJson(::invoke)
 
-    fun asHashSet(json: String) = asSet(JSONArray(json))
+    override fun asArrayList(array: JsonArrayWrapper) =
+        array.list(JsonArrayWrapper::getObject, ::invoke)
 
-    override fun asHashSet(jsonArray: JSONArray) = jsonArray.set(
-        wrapper = ::fromJson,
-        mapper = JSONArray::getJSONObject
-    )
+    fun asHashSet(json: String) =
+        asSet(JsonArrayWrapper(json))
 
-    fun asMap(json: String) = asMap(JSONObject(json))
+    override fun asHashSet(array: JsonArrayWrapper) =
+        array.set(JsonArrayWrapper::getObject, ::invoke)
 
-    override fun asMap(jsonObject: JSONObject) = jsonObject.map(
-        wrapper = ::fromJson,
-        mapper = JSONObject::getJSONObject
-    )
-}
+    fun asMap(json: String) =
+        asMap(JsonObjectWrapper(json))
 
-inline fun <T, C : MutableCollection<T>> JSONArray.collect(
-    mapper: JSONArray.(Int) -> T,
-    collection: (Int) -> C
-) = run {
-    val len = length()
-    collection(len).apply {
-        for (i in 0 until len) add(mapper(i))
-    }
-}
-
-inline fun <T, C : MutableMap<String, T>> JSONObject.collect(
-    mapper: JSONObject.(String) -> T,
-    collection: (Int) -> C
-) = run {
-    val keySet = keySet()
-    val len = keySet.size
-    collection(len).apply {
-        for (key in keySet) put(key, mapper(key))
-    }
+    override fun asMap(obj: JsonObjectWrapper) =
+        obj.map(JsonObjectWrapper::getObject, ::invoke)
 }

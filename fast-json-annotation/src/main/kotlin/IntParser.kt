@@ -1,10 +1,9 @@
-import org.json.JSONArray
-import org.json.JSONObject
+object IntParser : IListParser<Int>, ISetParser<Int>, IMapParser<Int> {
+    override fun asArrayList(array: JsonArrayWrapper) = array.list(JsonArrayWrapper::getInt)
 
-object IntParser : ListParser<Int>, SetParser<Int>, MapParser<Int> {
-    override fun asArrayList(jsonArray: JSONArray) = jsonArray.list(JSONArray::getInt)
+    override fun asHashSet(array: JsonArrayWrapper) = array.set(JsonArrayWrapper::getInt)
 
-    override fun asHashSet(jsonArray: JSONArray) = jsonArray.set(JSONArray::getInt)
+    override fun asMap(obj: JsonObjectWrapper) = obj.map(JsonObjectWrapper::getInt)
 
-    override fun asMap(jsonObject: JSONObject) = jsonObject.map(JSONObject::getInt)
+    override fun toJson(list: List<Int>) = list.toJson(JsonArrayWrapper::putInt)
 }

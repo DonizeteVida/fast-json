@@ -1,4 +1,4 @@
-package dummy
+package dummy1
 
 import JsonType
 
